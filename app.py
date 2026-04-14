@@ -10,9 +10,6 @@ import sys
 app = Flask(__name__)
 CORS(app)
 
-# Enable debug logging
-app.config['DEBUG'] = True
-
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
@@ -92,11 +89,19 @@ def compress_pdf():
             
             print(f"Rendering page at DPI: {dpi}, zoom: {zoom}", flush=True)
             
-            # Render page to image
+            # Render page to image - NOTE: tobytes() doesn't accept quality parameter
             pix = page.get_pixmap(matrix=mat)
-            img_bytes = pix.tobytes("jpeg", quality=quality)
             
-            print(f"Rendered page to {len(img_bytes)} bytes", flush=True)
+            # Convert pixmap to PIL Image so we can control JPEG quality
+            img_data = pix.tobytes("jpeg")  # No quality parameter here!
+            pil_img = Image.open(io.BytesIO(img_data))
+            
+            # Now compress with PIL which DOES support quality
+            img_bytes_io = io.BytesIO()
+            pil_img.save(img_bytes_io, format='JPEG', quality=quality, optimize=True)
+            img_bytes = img_bytes_io.getvalue()
+            
+            print(f"Rendered and compressed page to {len(img_bytes)} bytes", flush=True)
             
             # Create new page
             img_pdf = fitz.open(stream=img_bytes, filetype="jpeg")
