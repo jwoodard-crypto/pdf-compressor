@@ -1,6 +1,5 @@
 from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
-from PIL import Image
 import io
 import fitz  # PyMuPDF
 import os
@@ -33,20 +32,34 @@ def compress_pdf():
         
         # Render page to image
         pix = page.get_pixmap(matrix=mat)
-        img_data = pix.tobytes("png")
-        img = Image.open(io.BytesIO(img_data))
         
         # Resize if dimensions provided
         if width and height:
-            img = img.resize((int(width), int(height)), Image.Resampling.LANCZOS)
+            # PyMuPDF can resize pixmaps directly
+            target_width = int(width)
+            target_height = int(height)
+            
+            # Create new pixmap with target dimensions
+            # Convert to PIL-compatible format for resizing
+            img_data = pix.tobytes("png")
+            
+            # Use PyMuPDF to create resized image
+            temp_pdf = fitz.open("pdf", img_data)
+            temp_page = temp_pdf[0]
+            
+            # Calculate scale to fit target dimensions
+            scale_x = target_width / pix.width
+            scale_y = target_height / pix.height
+            resize_mat = fitz.Matrix(scale_x, scale_y)
+            
+            pix = temp_page.get_pixmap(matrix=resize_mat)
+            temp_pdf.close()
         
-        # Compress image
-        img_output = io.BytesIO()
-        img.save(img_output, format='JPEG', quality=quality, optimize=True)
-        img_output.seek(0)
+        # Convert to JPEG bytes with quality
+        img_bytes = pix.tobytes("jpeg", quality=quality)
         
         # Create new page with compressed image
-        img_pdf = fitz.open(stream=img_output, filetype="jpeg")
+        img_pdf = fitz.open(stream=img_bytes, filetype="jpeg")
         
         # Get dimensions for new page
         if width and height:
@@ -58,6 +71,7 @@ def compress_pdf():
         
         new_page = output_pdf.new_page(width=page_width, height=page_height)
         new_page.show_pdf_page(new_page.rect, img_pdf, 0)
+        img_pdf.close()
     
     # Save to bytes
     output = io.BytesIO()
