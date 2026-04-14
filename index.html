@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Compressor</title>
+    <title>Screenshot & PDF Compressor</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 40px 20px;
@@ -103,7 +103,8 @@
         }
 
         input[type="text"],
-        input[type="number"] {
+        input[type="number"],
+        select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -112,8 +113,7 @@
             transition: border-color 0.3s;
         }
 
-        input[type="text"]:focus,
-        input[type="number"]:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -144,7 +144,6 @@
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            appearance: none;
             width: 20px;
             height: 20px;
             border-radius: 50%;
@@ -176,7 +175,6 @@
             cursor: pointer;
             font-size: 1.5em;
             transition: all 0.3s;
-            margin-bottom: 0;
         }
 
         .lock-button.locked {
@@ -203,10 +201,6 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        button:active {
-            transform: translateY(0);
-        }
-
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -226,7 +220,6 @@
             padding: 40px;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
         }
 
         .success-icon {
@@ -287,8 +280,9 @@
             border: 2px solid #ffc107;
         }
 
-        .download-button {
-            margin-top: 20px;
+        .reset-button {
+            background: #6c757d;
+            margin-top: 10px;
         }
 
         .spinner {
@@ -345,42 +339,50 @@
             margin-top: 5px;
         }
 
-        .reset-button {
-            background: #6c757d;
-            margin-top: 10px;
+        .format-select {
+            display: none;
         }
 
-        .reset-button:hover {
-            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        .format-select.active {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📄 PDF Compressor</h1>
+        <h1>🖼️ Screenshot & PDF Compressor</h1>
 
         <div class="upload-zone" id="uploadZone">
             <div class="upload-icon">📁</div>
-            <div class="upload-text">Drop your PDF here</div>
-            <div class="upload-subtext">or click to browse</div>
-            <input type="file" id="fileInput" accept="application/pdf" style="display: none;">
+            <div class="upload-text">Drop your file here</div>
+            <div class="upload-subtext">Images (PNG, JPEG, WebP) or PDFs</div>
+            <input type="file" id="fileInput" accept="image/*,application/pdf" style="display: none;">
         </div>
 
         <div class="controls" id="controls">
-            <div class="file-type-badge">📄 PDF</div>
+            <div class="file-type-badge" id="fileTypeBadge">📄 File</div>
             
             <div class="control-group">
                 <label for="filename">Filename:</label>
                 <input type="text" id="filename" placeholder="compressed-file">
             </div>
 
+            <div class="control-group format-select" id="formatSelect">
+                <label for="format">Format:</label>
+                <select id="format">
+                    <option value="JPEG">JPEG</option>
+                    <option value="WEBP">WebP</option>
+                    <option value="PNG">PNG</option>
+                </select>
+            </div>
+
             <div class="slider-container">
                 <div class="slider-label">
-                    <label>PDF Quality:</label>
-                    <span class="slider-value" id="qualityValue">54%</span>
+                    <label id="qualityLabel">Quality:</label>
+                    <span class="slider-value" id="qualityValue">85%</span>
                 </div>
-                <input type="range" id="quality" min="10" max="100" value="54">
-                <div class="help-text">Lower quality = smaller file. PDF pages are re-rendered and compressed.</div>
+                <input type="range" id="quality" min="10" max="100" value="85">
+                <div class="help-text" id="qualityHelp">Lower quality = smaller file size</div>
             </div>
 
             <div class="control-group">
@@ -397,7 +399,7 @@
                 <div class="help-text">Lock aspect ratio to maintain proportions</div>
             </div>
 
-            <button id="compressBtn">Compress PDF</button>
+            <button id="compressBtn">Compress File</button>
         </div>
 
         <div class="spinner" id="spinner"></div>
@@ -405,7 +407,7 @@
         <div class="results" id="results">
             <div class="success-card">
                 <div class="success-icon">✅</div>
-                <div class="success-title">PDF Compressed Successfully!</div>
+                <div class="success-title">File Compressed Successfully!</div>
                 
                 <div class="file-stats">
                     <div class="stat">
@@ -422,8 +424,8 @@
                     <span id="savingsText"></span>
                 </div>
 
-                <button id="downloadBtn" class="download-button">📥 Download Compressed PDF</button>
-                <button id="resetBtn" class="reset-button">🔄 Compress Another PDF</button>
+                <button id="downloadBtn" class="download-button">📥 Download Compressed File</button>
+                <button id="resetBtn" class="reset-button">🔄 Compress Another File</button>
             </div>
         </div>
     </div>
@@ -434,9 +436,14 @@
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
         const controls = document.getElementById('controls');
+        const fileTypeBadge = document.getElementById('fileTypeBadge');
+        const formatSelect = document.getElementById('formatSelect');
         const filenameInput = document.getElementById('filename');
+        const formatSelector = document.getElementById('format');
         const qualitySlider = document.getElementById('quality');
         const qualityValue = document.getElementById('qualityValue');
+        const qualityLabel = document.getElementById('qualityLabel');
+        const qualityHelp = document.getElementById('qualityHelp');
         const widthInput = document.getElementById('width');
         const heightInput = document.getElementById('height');
         const lockAspect = document.getElementById('lockAspect');
@@ -449,6 +456,7 @@
         let compressedBlob = null;
         let originalAspectRatio = 1;
         let aspectRatioLocked = true;
+        let fileType = null;
 
         uploadZone.addEventListener('click', () => fileInput.click());
         
@@ -465,11 +473,7 @@
             e.preventDefault();
             uploadZone.classList.remove('dragover');
             const file = e.dataTransfer.files[0];
-            if (file && file.type === 'application/pdf') {
-                handleFile(file);
-            } else {
-                showNotification('⚠️ Please upload a PDF file');
-            }
+            if (file) handleFile(file);
         });
 
         fileInput.addEventListener('change', (e) => {
@@ -479,26 +483,47 @@
 
         async function handleFile(file) {
             originalFile = file;
+            fileType = file.type.startsWith('image/') ? 'image' : 'pdf';
 
             const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
             filenameInput.value = `compressed-${nameWithoutExt}`;
 
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            try {
-                // Get dimensions
-                const dimensionsResponse = await fetch('/get-pdf-dimensions', {
-                    method: 'POST',
-                    body: formData
-                });
-                const dimensions = await dimensionsResponse.json();
-                widthInput.value = dimensions.width;
-                heightInput.value = dimensions.height;
-                originalAspectRatio = dimensions.width / dimensions.height;
-            } catch (error) {
-                console.error('Dimensions error:', error);
-                showNotification('⚠️ Error loading PDF dimensions');
+            if (fileType === 'image') {
+                fileTypeBadge.textContent = '🖼️ Image';
+                formatSelect.classList.add('active');
+                qualityLabel.textContent = 'Image Quality:';
+                qualityHelp.textContent = 'Lower quality = smaller file size';
+                
+                // Load image dimensions
+                const img = new Image();
+                img.onload = () => {
+                    widthInput.value = img.width;
+                    heightInput.value = img.height;
+                    originalAspectRatio = img.width / img.height;
+                };
+                img.src = URL.createObjectURL(file);
+            } else {
+                fileTypeBadge.textContent = '📄 PDF';
+                formatSelect.classList.remove('active');
+                qualityLabel.textContent = 'PDF Quality:';
+                qualityHelp.textContent = 'Lower quality = smaller file. PDF pages are re-rendered and compressed.';
+                
+                // Get PDF dimensions
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const response = await fetch('/get-pdf-dimensions', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const dimensions = await response.json();
+                    widthInput.value = dimensions.width;
+                    heightInput.value = dimensions.height;
+                    originalAspectRatio = dimensions.width / dimensions.height;
+                } catch (error) {
+                    console.error('Dimensions error:', error);
+                }
             }
 
             controls.classList.add('active');
@@ -541,7 +566,13 @@
                 formData.append('width', widthInput.value);
                 formData.append('height', heightInput.value);
 
-                const response = await fetch('/compress-pdf', {
+                let endpoint = fileType === 'image' ? '/compress-image' : '/compress-pdf';
+                
+                if (fileType === 'image') {
+                    formData.append('format', formatSelector.value);
+                }
+
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
@@ -588,11 +619,12 @@
             if (!compressedBlob) return;
 
             const filename = filenameInput.value || 'compressed-file';
+            let extension = fileType === 'image' ? `.${formatSelector.value.toLowerCase()}` : '.pdf';
             
             const url = URL.createObjectURL(compressedBlob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename + '.pdf';
+            a.download = filename + extension;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -607,7 +639,7 @@
             originalFile = null;
             compressedBlob = null;
             fileInput.value = '';
-            showNotification('🔄 Ready for another PDF!');
+            showNotification('🔄 Ready for another file!');
         });
 
         function formatFileSize(bytes) {
