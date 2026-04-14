@@ -3,28 +3,44 @@ from flask_cors import CORS
 import io
 import fitz  # PyMuPDF
 import os
+import traceback
 
 app = Flask(__name__)
 CORS(app)
 
 @app.route('/')
 def index():
+    print("Index route accessed")
     return send_from_directory('.', 'index.html')
 
 @app.route('/compress-pdf', methods=['POST'])
 def compress_pdf():
+    print("=== COMPRESS PDF ENDPOINT HIT ===")
     try:
+        if 'file' not in request.files:
+            print("ERROR: No file in request")
+            return jsonify({'error': 'No file provided'}), 400
+            
         file = request.files['file']
+        print(f"File received: {file.filename}")
+        
         quality = int(request.form.get('quality', 85))
         width = request.form.get('width')
         height = request.form.get('height')
         
+        print(f"Quality: {quality}, Width: {width}, Height: {height}")
+        
         # Open PDF
         pdf_bytes = file.read()
+        print(f"PDF bytes read: {len(pdf_bytes)}")
+        
         pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+        print(f"PDF opened, pages: {pdf_document.page_count}")
+        
         output_pdf = fitz.open()
         
         for page_num in range(pdf_document.page_count):
+            print(f"Processing page {page_num + 1}/{pdf_document.page_count}")
             page = pdf_document[page_num]
             
             # Calculate DPI based on quality (72-300 DPI range)
@@ -61,42 +77,25 @@ def compress_pdf():
         pdf_document.close()
         output_pdf.close()
         
+        print(f"Compression complete! Output size: {len(output.getvalue())}")
+        
         return send_file(output, mimetype='application/pdf', as_attachment=False, download_name='compressed.pdf')
     
     except Exception as e:
-        print(f"Error in compress_pdf: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/pdf-preview', methods=['POST'])
-def pdf_preview():
-    try:
-        file = request.files['file']
-        
-        # Open PDF and get first page
-        pdf_bytes = file.read()
-        pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
-        
-        if pdf_document.page_count == 0:
-            return jsonify({'error': 'PDF has no pages'}), 400
-            
-        page = pdf_document[0]
-        
-        # Render first page as image for preview (higher quality for preview)
-        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-        img_data = pix.tobytes("png")
-        
-        pdf_document.close()
-        
-        return send_file(io.BytesIO(img_data), mimetype='image/png')
-    
-    except Exception as e:
-        print(f"Error in pdf_preview: {str(e)}")
+        print(f"ERROR in compress_pdf: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 @app.route('/get-pdf-dimensions', methods=['POST'])
 def get_pdf_dimensions():
+    print("=== GET PDF DIMENSIONS ENDPOINT HIT ===")
     try:
+        if 'file' not in request.files:
+            print("ERROR: No file in request")
+            return jsonify({'error': 'No file provided'}), 400
+            
         file = request.files['file']
+        print(f"File received: {file.filename}")
         
         # Open PDF and get first page dimensions
         pdf_bytes = file.read()
@@ -110,14 +109,18 @@ def get_pdf_dimensions():
         width = int(page.rect.width)
         height = int(page.rect.height)
         
+        print(f"Dimensions: {width} x {height}")
+        
         pdf_document.close()
         
         return jsonify({'width': width, 'height': height})
     
     except Exception as e:
-        print(f"Error in get_pdf_dimensions: {str(e)}")
+        print(f"ERROR in get_pdf_dimensions: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    print(f"Starting app on port {port}")
     app.run(host='0.0.0.0', port=port)
