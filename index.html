@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -71,7 +71,6 @@
 
         .controls {
             display: none;
-            margin-top: 30px;
         }
 
         .controls.active {
@@ -213,111 +212,83 @@
             cursor: not-allowed;
         }
 
-        .comparison {
+        .results {
             display: none;
-            margin-top: 30px;
         }
 
-        .comparison.active {
+        .results.active {
             display: block;
         }
 
-        .comparison-title {
-            color: white;
-            font-size: 1.8em;
-            margin-bottom: 20px;
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
             text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
-        .comparison-grid {
+        .success-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .success-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .file-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .preview-box {
-            background: white;
-            border-radius: 20px;
+            margin: 30px 0;
             padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: #f8f9fa;
+            border-radius: 10px;
         }
 
-        .preview-title {
-            font-size: 1.2em;
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
             font-weight: bold;
-            margin-bottom: 15px;
             color: #333;
         }
 
-        .preview-image {
-            width: 100%;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .preview-info {
-            color: #666;
-            font-size: 0.9em;
-            line-height: 1.6;
-        }
-
         .savings {
-            background: white;
-            border-radius: 20px;
             padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 1.3em;
+            font-weight: bold;
         }
 
-        .savings-amount {
-            font-size: 2em;
-            font-weight: bold;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .savings.positive {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
         }
 
         .savings.negative {
             background: #fff3cd;
+            color: #856404;
             border: 2px solid #ffc107;
         }
 
-        .savings.negative .savings-amount {
-            background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .download-box {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .drag-hint {
-            color: #667eea;
-            font-size: 1.2em;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f0f4ff;
-            border-radius: 10px;
-            border: 2px dashed #667eea;
-        }
-
-        .compressed-preview {
-            cursor: move;
-            transition: transform 0.2s;
-        }
-
-        .compressed-preview:hover {
-            transform: scale(1.02);
+        .download-button {
+            margin-top: 20px;
         }
 
         .spinner {
@@ -374,14 +345,13 @@
             margin-top: 5px;
         }
 
-        @media (max-width: 768px) {
-            .comparison-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
+        .reset-button {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
+        .reset-button:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
         }
     </style>
 </head>
@@ -432,36 +402,28 @@
 
         <div class="spinner" id="spinner"></div>
 
-        <div class="comparison" id="comparison">
-            <h2 class="comparison-title">Results</h2>
-            
-            <div class="comparison-grid">
-                <div class="preview-box">
-                    <div class="preview-title">Original</div>
-                    <img class="preview-image" id="originalPreview" alt="Original">
-                    <div class="preview-info">
-                        <strong>Size:</strong> <span id="originalSize"></span><br>
-                        <strong>Dimensions:</strong> <span id="originalDimensions"></span>
+        <div class="results" id="results">
+            <div class="success-card">
+                <div class="success-icon">✅</div>
+                <div class="success-title">PDF Compressed Successfully!</div>
+                
+                <div class="file-stats">
+                    <div class="stat">
+                        <div class="stat-label">Original Size</div>
+                        <div class="stat-value" id="originalSize">-</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Compressed Size</div>
+                        <div class="stat-value" id="compressedSize">-</div>
                     </div>
                 </div>
 
-                <div class="preview-box">
-                    <div class="drag-hint">👆 Drag this to your desktop to save!</div>
-                    <div class="preview-title">Compressed</div>
-                    <img class="preview-image compressed-preview" id="compressedPreview" alt="Compressed" draggable="true">
-                    <div class="preview-info">
-                        <strong>Size:</strong> <span id="compressedSize"></span><br>
-                        <strong>Dimensions:</strong> <span id="compressedDimensions"></span>
-                    </div>
+                <div class="savings" id="savings">
+                    <span id="savingsText"></span>
                 </div>
-            </div>
 
-            <div class="savings" id="savings">
-                <div class="savings-amount" id="savingsAmount"></div>
-            </div>
-
-            <div class="download-box">
-                <button id="downloadBtn">Download Compressed PDF</button>
+                <button id="downloadBtn" class="download-button">📥 Download Compressed PDF</button>
+                <button id="resetBtn" class="reset-button">🔄 Compress Another PDF</button>
             </div>
         </div>
     </div>
@@ -480,14 +442,13 @@
         const lockAspect = document.getElementById('lockAspect');
         const compressBtn = document.getElementById('compressBtn');
         const spinner = document.getElementById('spinner');
-        const comparison = document.getElementById('comparison');
+        const results = document.getElementById('results');
         const notification = document.getElementById('notification');
 
         let originalFile = null;
         let compressedBlob = null;
         let originalAspectRatio = 1;
         let aspectRatioLocked = true;
-        let originalPreviewUrl = null;
 
         uploadZone.addEventListener('click', () => fileInput.click());
         
@@ -526,32 +487,22 @@
             formData.append('file', file);
             
             try {
-                // Get preview
-                const previewResponse = await fetch('/pdf-preview', {
-                    method: 'POST',
-                    body: formData
-                });
-                const blob = await previewResponse.blob();
-                originalPreviewUrl = URL.createObjectURL(blob);
-
                 // Get dimensions
-                const dimensionsFormData = new FormData();
-                dimensionsFormData.append('file', file);
                 const dimensionsResponse = await fetch('/get-pdf-dimensions', {
                     method: 'POST',
-                    body: dimensionsFormData
+                    body: formData
                 });
                 const dimensions = await dimensionsResponse.json();
                 widthInput.value = dimensions.width;
                 heightInput.value = dimensions.height;
                 originalAspectRatio = dimensions.width / dimensions.height;
             } catch (error) {
-                console.error('Preview error:', error);
-                showNotification('⚠️ Error loading PDF preview');
+                console.error('Dimensions error:', error);
+                showNotification('⚠️ Error loading PDF dimensions');
             }
 
             controls.classList.add('active');
-            comparison.classList.remove('active');
+            results.classList.remove('active');
         }
 
         qualitySlider.addEventListener('input', (e) => {
@@ -581,6 +532,7 @@
 
             spinner.classList.add('active');
             compressBtn.disabled = true;
+            controls.style.opacity = '0.5';
 
             try {
                 const formData = new FormData();
@@ -594,39 +546,32 @@
                     body: formData
                 });
 
+                if (!response.ok) {
+                    throw new Error('Compression failed');
+                }
+
                 compressedBlob = await response.blob();
 
-                // Show comparison
-                document.getElementById('originalPreview').src = originalPreviewUrl;
+                // Show results
                 document.getElementById('originalSize').textContent = formatFileSize(originalFile.size);
-                document.getElementById('originalDimensions').textContent = 'PDF Document';
-
-                // Get preview of compressed PDF
-                const previewFormData = new FormData();
-                previewFormData.append('file', compressedBlob, 'compressed.pdf');
-                const previewResponse = await fetch('/pdf-preview', {
-                    method: 'POST',
-                    body: previewFormData
-                });
-                const previewBlob = await previewResponse.blob();
-                document.getElementById('compressedPreview').src = URL.createObjectURL(previewBlob);
-
                 document.getElementById('compressedSize').textContent = formatFileSize(compressedBlob.size);
-                document.getElementById('compressedDimensions').textContent = `PDF Document (Compressed)`;
 
                 const savings = ((originalFile.size - compressedBlob.size) / originalFile.size * 100);
                 const savingsElement = document.getElementById('savings');
-                const savingsAmount = document.getElementById('savingsAmount');
+                const savingsText = document.getElementById('savingsText');
                 
                 if (savings > 0) {
                     savingsElement.classList.remove('negative');
-                    savingsAmount.textContent = `✅ File reduced by ${savings.toFixed(1)}%`;
+                    savingsElement.classList.add('positive');
+                    savingsText.textContent = `✅ File reduced by ${savings.toFixed(1)}%`;
                 } else {
+                    savingsElement.classList.remove('positive');
                     savingsElement.classList.add('negative');
-                    savingsAmount.textContent = `⚠️ File increased by ${Math.abs(savings).toFixed(1)}%`;
+                    savingsText.textContent = `⚠️ File increased by ${Math.abs(savings).toFixed(1)}%`;
                 }
 
-                comparison.classList.add('active');
+                controls.classList.remove('active');
+                results.classList.add('active');
                 showNotification('✅ Compression complete!');
 
             } catch (error) {
@@ -635,6 +580,7 @@
             } finally {
                 spinner.classList.remove('active');
                 compressBtn.disabled = false;
+                controls.style.opacity = '1';
             }
         });
 
@@ -655,13 +601,13 @@
             showNotification('📥 Download started!');
         });
 
-        document.getElementById('compressedPreview').addEventListener('dragstart', (e) => {
-            if (!compressedBlob) return;
-
-            const filename = filenameInput.value || 'compressed-file';
-            
-            e.dataTransfer.setData('DownloadURL', 
-                `application/pdf:${filename}.pdf:${URL.createObjectURL(compressedBlob)}`);
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            results.classList.remove('active');
+            controls.classList.remove('active');
+            originalFile = null;
+            compressedBlob = null;
+            fileInput.value = '';
+            showNotification('🔄 Ready for another PDF!');
         });
 
         function formatFileSize(bytes) {
