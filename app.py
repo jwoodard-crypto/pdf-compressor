@@ -10,6 +10,9 @@ import sys
 app = Flask(__name__)
 CORS(app)
 
+# Enable debug logging
+app.config['DEBUG'] = True
+
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
@@ -103,9 +106,7 @@ def compress_pdf():
             
             print(f"Rendered and compressed page to {len(img_bytes)} bytes", flush=True)
             
-            # Create new page
-            img_pdf = fitz.open(stream=img_bytes, filetype="jpeg")
-            
+            # Determine page dimensions
             if width and height:
                 page_width = float(width)
                 page_height = float(height)
@@ -115,9 +116,13 @@ def compress_pdf():
             
             print(f"Creating new page with dimensions: {page_width}x{page_height}", flush=True)
             
+            # Create new page and insert the compressed image
             new_page = output_pdf.new_page(width=page_width, height=page_height)
-            new_page.show_pdf_page(new_page.rect, img_pdf, 0)
-            img_pdf.close()
+            
+            # Insert the JPEG image directly into the page
+            new_page.insert_image(new_page.rect, stream=img_bytes)
+            
+            print(f"Inserted image into page {page_num + 1}", flush=True)
         
         print("Saving output PDF", flush=True)
         output = io.BytesIO()
